@@ -1,0 +1,60 @@
+#!/bin/bash
+
+engineLoc="/direct/phenix+u/abagoly/jupyter/.anaconda3/bin/"
+lfile="/direct/phenix+u/abagoly/jupyter/logs/engine"
+hostName=`hostname`
+
+N=0
+profile=""
+
+function usage()
+{
+    echo "Usage: ipcluster --n=1 --profile='selected_profile'"
+}
+
+while [ "$1" != "" ]; do
+    PARAM=`echo $1 | awk -F= '{print $1}'`
+    VALUE=`echo $1 | awk -F= '{print $2}'`
+    case $PARAM in
+        -h | --help)
+            usage
+            exit
+            ;;
+        --profile)
+            profile=$VALUE
+            ;;
+        --n | --nodes)
+            N=$VALUE
+            ;;
+        *)
+            echo "ERROR: unknown parameter \"$PARAM\""
+            usage
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+if [ -z $profile ] && [ $N -eq 0 ]; then
+    usage
+    exit 1
+fi
+
+trap ctrl_c SIGINT
+
+function ctrl_c() {
+        echo "Stopping the engines..."
+        condor_rm abagoly
+        kill $ipcontroller_PID
+}
+
+
+$engineLoc/ipcontroller --ip="*" --profile="$profile" &
+
+ipcontroller_PID=$!
+
+condor_submit condor.job -a "N=$N" -a "engineLocation=${engineLoc}"  -a "profile=$profile" -a "HostName='$hostName'" \
+                         -a "file=$lfile"
+
+
+wait $ipcontroller_PID
