@@ -1,0 +1,10 @@
+Universe     = vanilla
+Notification = Error
+Initialdir   =
+Executable   = $(engineLocation)/ipengine
+Arguments    = "--profile='$(profile)' --location=$(HostName)"
+output       = $(file).out
+error        = $(file).err
+Log          = $(file).log
+Notify_user  = abagoly
+Queue $(N)
